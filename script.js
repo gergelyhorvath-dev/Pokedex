@@ -1,6 +1,12 @@
+let offset = 0;
+
 async function loadPokemon() {
+
+    let loading = document.getElementById("loading");
+    loading.style.display = "block";
+
     let response = await fetch(
-        "https://pokeapi.co/api/v2/pokemon?limit=20"
+        `https://pokeapi.co/api/v2/pokemon?limit=20&offset=${offset}`
     );
 
     let data = await response.json();
@@ -11,6 +17,7 @@ async function loadPokemon() {
     let container = document.getElementById("pokemon-list");
 
     for (let i = 0; i < pokemonList.length; i++) {
+
         console.log(pokemonList[i].name);
         console.log(pokemonList[i].url);
 
@@ -19,13 +26,30 @@ async function loadPokemon() {
 
         console.log(pokemon);
 
+        let pokemonType = pokemon.types[0].type.name;
+
         container.innerHTML += `
             <li>
-                <h2>${pokemon.name}</h2>
+                <p class="pokemon-number">#${pokemon.id}</p>
+
                 <img src="${pokemon.sprites.front_default}">
+
+                <h2>${pokemon.name}</h2>
+
+                <p class="pokemon-type">
+                    Type: ${pokemonType}
+                </p>
             </li>
         `;
     }
+
+    loading.style.display = "none";
 }
 
 loadPokemon();
+
+
+function loadMore() {
+    offset = offset + 20;
+    loadPokemon();
+}

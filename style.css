@@ -29,3 +29,51 @@ header {
 #pokemon-list img {
     width: 120px;
 }
+
+#pokemon-list li {
+    transition: transform 0.2s;
+}
+
+#pokemon-list li:hover {
+    transform: translateY(-5px);
+}
+
+#pokemon-list h2 {
+    text-transform: capitalize;
+    margin: 10px 0;
+}
+
+.pokemon-number {
+    color: #777;
+    font-size: 14px;
+    margin: 0;
+}
+
+.pokemon-type {
+    background-color: #eeeeee;
+    border-radius: 15px;
+    padding: 5px 10px;
+    font-size: 14px;
+}
+
+#loading {
+    display: none;
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    padding: 20px;
+}
+
+.load-more-button {
+    display: block;
+    margin: 20px auto 40px auto;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.load-more-button:hover {
+    transform: scale(1.05);
+}
