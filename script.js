@@ -1,55 +1,87 @@
 let offset = 0;
 
 async function loadPokemon() {
-
     let loading = document.getElementById("loading");
+    let loadMoreButton = document.querySelector(".load-more-button");
+
     loading.style.display = "block";
+    loadMoreButton.disabled = true;
 
     let response = await fetch(
         `https://pokeapi.co/api/v2/pokemon?limit=20&offset=${offset}`
     );
 
     let data = await response.json();
-
-    console.log(data);
-
     let pokemonList = data.results;
+
+    await renderPokemon(pokemonList);
+
+    loading.style.display = "none";
+    loadMoreButton.disabled = false;
+}
+
+
+async function renderPokemon(pokemonList) {
     let container = document.getElementById("pokemon-list");
 
     for (let i = 0; i < pokemonList.length; i++) {
-
-        console.log(pokemonList[i].name);
-        console.log(pokemonList[i].url);
-
         let detailResponse = await fetch(pokemonList[i].url);
         let pokemon = await detailResponse.json();
 
-        console.log(pokemon);
+        let pokemonTypes = createPokemonTypes(pokemon.types);
+        let mainType = pokemon.types[0].type.name;
 
-        let pokemonType = pokemon.types[0].type.name;
+        container.innerHTML += pokemonTemplate(
+            pokemon,
+            pokemonTypes,
+            mainType
+        );
+    }
+}
 
-        container.innerHTML += `
-            <li>
-                <p class="pokemon-number">#${pokemon.id}</p>
 
-                <img src="${pokemon.sprites.front_default}">
+function createPokemonTypes(types) {
+    let pokemonTypes = "";
 
-                <h2>${pokemon.name}</h2>
+    for (let i = 0; i < types.length; i++) {
+        let typeName = types[i].type.name;
 
-                <p class="pokemon-type">
-                    Type: ${pokemonType}
-                </p>
-            </li>
+        pokemonTypes += `
+            <span class="pokemon-type ${typeName}">
+                ${typeName}
+            </span>
         `;
     }
 
-    loading.style.display = "none";
+    return pokemonTypes;
 }
 
-loadPokemon();
+
+function pokemonTemplate(pokemon, pokemonTypes, mainType) {
+    return `
+        <li class="pokemon-card ${mainType}">
+            <p class="pokemon-number">#${pokemon.id}</p>
+
+            <img 
+                src="${pokemon.sprites.front_default}"
+                alt="${pokemon.name}"
+                data-id="card-image"
+            >
+
+            <h2>${pokemon.name}</h2>
+
+            <div class="pokemon-types">
+                ${pokemonTypes}
+            </div>
+        </li>
+    `;
+}
 
 
 function loadMore() {
     offset = offset + 20;
     loadPokemon();
 }
+
+
+loadPokemon();
