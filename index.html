@@ -1,31 +1,39 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pokédex</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-
     <header>
         <h1>Pokédex</h1>
+        <div class="search-area">
+            <input id="search-input" data-id="search-input" type="text"
+                placeholder="Search Pokémon..." aria-label="Search Pokémon">
+            <button data-id="search-button" onclick="searchPokemon()" aria-label="Search Pokémon">
+                Search
+            </button>
+        </div>
     </header>
 
-    <main>
+    <main data-id="content">
+        <div id="loading">Loading Pokémon...</div>
 
-        <div id="loading">
-            Loading Pokémon...
-        </div>
+        <ul id="pokemon-list"></ul>
 
-        <div id="pokemon-list"></div>
-
-        <button class="load-more-button" onclick="loadMore()">
+        <button class="load-more-button" data-id="load-more-button"
+            onclick="loadMore()" aria-label="Load more Pokémon">
             Load more
         </button>
-
     </main>
+
+    <dialog id="pokemon-dialog" data-id="dialog" aria-label="Pokémon details">
+        <div id="dialog-content"></div>
+    </dialog>
 
     <script src="script.js"></script>
 </body>
