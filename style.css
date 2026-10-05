@@ -306,3 +306,19 @@ dialog::backdrop {
         box-sizing: border-box;
     }
 }
+
+
+/* Final checklist polish */
+html, body { max-width: 100%; overflow-x: hidden; }
+.brand { display:flex; justify-content:center; align-items:center; gap:10px; }
+.logo { display:inline-flex; width:38px; height:38px; align-items:center; justify-content:center; border:3px solid #222; border-radius:50%; font-size:22px; font-weight:bold; }
+.search-area button:disabled, .load-more-button:disabled { cursor:not-allowed; opacity:.55; }
+.pokemon-card:focus-visible, .search-area button:focus-visible, .search-area input:focus-visible, .dialog-navigation button:focus-visible, .close-button:focus-visible, .load-more-button:focus-visible { outline:3px solid #222; outline-offset:3px; }
+@media (max-width:320px) {
+ header { padding:14px 8px; }
+ #pokemon-list { padding:8px; }
+ .pokemon-card { width:calc(100vw - 32px); max-width:280px; }
+ .dialog-card { width:calc(100vw - 24px); padding:20px 14px; }
+ .dialog-image { width:min(220px,68vw); }
+ .search-area input, .search-area button { width:calc(100vw - 32px); }
+}

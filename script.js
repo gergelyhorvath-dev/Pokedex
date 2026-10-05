@@ -1,6 +1,7 @@
 let offset = 0;
 let allPokemon = [];
 let currentPokemonIndex = 0;
+let pokemonCache = {};
 
 
 async function loadPokemon() {
@@ -17,8 +18,12 @@ async function loadPokemon() {
 
 async function loadPokemonDetails(pokemonList) {
     for (let i = 0; i < pokemonList.length; i++) {
-        let response = await fetch(pokemonList[i].url);
-        let pokemon = await response.json();
+        let pokemon = pokemonCache[pokemonList[i].url];
+        if (!pokemon) {
+            let response = await fetch(pokemonList[i].url);
+            pokemon = await response.json();
+            pokemonCache[pokemonList[i].url] = pokemon;
+        }
         allPokemon.push(pokemon);
     }
 }
@@ -64,6 +69,12 @@ function createPokemonTypes(types) {
             </span>`;
     }
     return pokemonTypes;
+}
+
+
+function updateSearchButton() {
+    let input = document.getElementById("search-input").value.trim();
+    document.getElementById("search-button").disabled = input.length < 3;
 }
 
 
@@ -118,7 +129,7 @@ function dialogTemplate(pokemon) {
             <h2>${capitalize(pokemon.name)}</h2>
             <p>#${pokemon.id}</p>
             <img class="dialog-image" data-id="dialog-image"
-                src="${pokemon.sprites.other["official-artwork"].front_default}"
+                src="${pokemon.sprites.other["official-artwork"].front_default || pokemon.sprites.front_default}"
                 alt="${pokemon.name}">
             ${statsTemplate(pokemon)}
             <div class="dialog-navigation">
@@ -185,4 +196,12 @@ document.getElementById("pokemon-dialog").addEventListener("click", function(eve
 });
 
 
+document.addEventListener("keydown", function(event) {
+    if (event.key === "Escape" && document.getElementById("pokemon-dialog").open) {
+        closeDialog();
+    }
+});
+
+
+updateSearchButton();
 loadPokemon();

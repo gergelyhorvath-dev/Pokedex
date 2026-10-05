@@ -5,16 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pokédex</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <header>
-        <h1>Pokédex</h1>
+        <div class="brand"><span class="logo" aria-hidden="true">◉</span><h1>Pokédex</h1></div>
         <div class="search-area">
             <input id="search-input" data-id="search-input" type="text"
-                placeholder="Search Pokémon..." aria-label="Search Pokémon">
-            <button data-id="search-button" onclick="searchPokemon()" aria-label="Search Pokémon">
+                placeholder="Search Pokémon..." aria-label="Search Pokémon" oninput="updateSearchButton()">
+            <button id="search-button" data-id="search-button" onclick="searchPokemon()" aria-label="Search Pokémon" disabled>
                 Search
             </button>
         </div>
