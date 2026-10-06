@@ -2,6 +2,7 @@ let offset = 0;
 let allPokemon = [];
 let currentPokemonIndex = 0;
 let pokemonCache = {};
+let speciesCache = {};
 
 
 async function loadPokemon() {
@@ -18,14 +19,18 @@ async function loadPokemon() {
 
 async function loadPokemonDetails(pokemonList) {
     for (let i = 0; i < pokemonList.length; i++) {
-        let pokemon = pokemonCache[pokemonList[i].url];
-        if (!pokemon) {
-            let response = await fetch(pokemonList[i].url);
-            pokemon = await response.json();
-            pokemonCache[pokemonList[i].url] = pokemon;
-        }
-        allPokemon.push(pokemon);
+        let pokemon = await getPokemonData(pokemonList[i].url);
+        if (!allPokemon.some(item => item.id === pokemon.id)) allPokemon.push(pokemon);
     }
+}
+
+
+async function getPokemonData(url) {
+    if (pokemonCache[url]) return pokemonCache[url];
+    let response = await fetch(url);
+    let pokemon = await response.json();
+    pokemonCache[url] = pokemon;
+    return pokemon;
 }
 
 
@@ -79,7 +84,7 @@ function updateSearchButton() {
 
 
 function searchPokemon() {
-    let input = document.getElementById("search-input").value.toLowerCase();
+    let input = document.getElementById("search-input").value.trim().toLowerCase();
 
     if (input.length < 3) {
         renderPokemon(allPokemon);
@@ -87,7 +92,7 @@ function searchPokemon() {
     }
 
     let filteredPokemon = allPokemon.filter(
-        pokemon => pokemon.name.includes(input)
+        pokemon => pokemon.name.includes(input) || pokemon.id.toString() === input
     );
     renderSearchResult(filteredPokemon);
 }
@@ -105,40 +110,113 @@ function renderSearchResult(filteredPokemon) {
 }
 
 
-function openPokemon(id) {
+async function openPokemon(id) {
     currentPokemonIndex = allPokemon.findIndex(pokemon => pokemon.id === id);
-    renderDialog();
+    renderDialog("Loading extra details...");
     document.getElementById("pokemon-dialog").showModal();
     document.body.classList.add("no-scroll");
+    let species = await loadSpeciesLazy(allPokemon[currentPokemonIndex]);
+    renderDialog(getSpeciesText(species));
 }
 
 
-function renderDialog() {
+function renderDialog(description = "") {
     let pokemon = allPokemon[currentPokemonIndex];
     let content = document.getElementById("dialog-content");
-    content.innerHTML = dialogTemplate(pokemon);
+    content.innerHTML = dialogTemplate(pokemon, description);
 }
 
 
-function dialogTemplate(pokemon) {
+async function loadSpeciesLazy(pokemon) {
+    let url = pokemon.species.url;
+    if (speciesCache[url]) return speciesCache[url];
+    let response = await fetch(url);
+    let species = await response.json();
+    speciesCache[url] = species;
+    return species;
+}
+
+
+function getSpeciesText(species) {
+    let entry = species.flavor_text_entries.find(item => item.language.name === "en");
+    return entry ? entry.flavor_text.replace(/\f|\n/g, " ") : "No description available.";
+}
+
+
+function dialogTemplate(pokemon, description) {
     let mainType = pokemon.types[0].type.name;
-    return `
-        <div class="dialog-card ${mainType}" data-id="overlay-pokemon-name">
+    let image = pokemon.sprites.other["official-artwork"].front_default || pokemon.sprites.front_default;
+    return `<div class="dialog-card ${mainType}" data-id="overlay-pokemon-name">
+        <div class="dialog-hero">
             <button class="close-button" data-id="close-dialog-button"
                 onclick="closeDialog()" aria-label="Close dialog">×</button>
-            <h2>${capitalize(pokemon.name)}</h2>
-            <p>#${pokemon.id}</p>
-            <img class="dialog-image" data-id="dialog-image"
-                src="${pokemon.sprites.other["official-artwork"].front_default || pokemon.sprites.front_default}"
-                alt="${pokemon.name}">
-            ${statsTemplate(pokemon)}
-            <div class="dialog-navigation">
-                <button data-id="prev-button" onclick="previousPokemon()"
-                    aria-label="Previous Pokémon">←</button>
-                <button data-id="next-button" onclick="nextPokemon()"
-                    aria-label="Next Pokémon">→</button>
+            <div class="dialog-title-row">
+                <h2>${capitalize(pokemon.name)}</h2><p>#${pokemon.id}</p>
             </div>
-        </div>`;
+            <div class="dialog-types">${createPokemonTypes(pokemon.types)}</div>
+            <img class="dialog-image" data-id="dialog-image" src="${image}" alt="${pokemon.name}">
+        </div>
+        <div class="dialog-info">
+            ${tabsTemplate()}
+            <div id="tab-content">${aboutTemplate(pokemon, description)}</div>
+            ${navigationTemplate()}
+        </div>
+    </div>`;
+}
+
+
+function tabsTemplate() {
+    return `<div class="info-tabs">
+        <button class="tab-button active-tab" onclick="showTab('about')">About</button>
+        <button class="tab-button" onclick="showTab('stats')">Base Stats</button>
+        <button class="tab-button" onclick="showTab('details')">Details</button>
+    </div>`;
+}
+
+
+function showTab(tabName) {
+    let pokemon = allPokemon[currentPokemonIndex];
+    let content = document.getElementById("tab-content");
+    if (tabName === "stats") content.innerHTML = statsTemplate(pokemon);
+    else if (tabName === "details") content.innerHTML = detailsTemplate(pokemon);
+    else content.innerHTML = aboutTemplate(pokemon, "");
+    setActiveTab(tabName);
+}
+
+
+function setActiveTab(tabName) {
+    let names = ["about", "stats", "details"];
+    document.querySelectorAll(".tab-button").forEach((button, index) => {
+        button.classList.toggle("active-tab", names[index] === tabName);
+    });
+}
+
+
+function detailsTemplate(pokemon) {
+    let abilities = pokemon.abilities.map(item => capitalize(item.ability.name)).join(", ");
+    return `<div class="details">
+        <p><strong>Abilities</strong><span>${abilities}</span></p>
+        <p><strong>Experience</strong><span>${pokemon.base_experience ?? "-"}</span></p>
+        <p><strong>Types</strong><span>${pokemon.types.map(item => capitalize(item.type.name)).join(", ")}</span></p>
+    </div>`;
+}
+
+
+function aboutTemplate(pokemon, description) {
+    return `<div class="about">
+        <p><strong>Species</strong><span>${capitalize(pokemon.species.name)}</span></p>
+        <p><strong>Height</strong><span>${pokemon.height / 10} m</span></p>
+        <p><strong>Weight</strong><span>${pokemon.weight / 10} kg</span></p>
+        <p class="description">${description}</p>
+    </div>`;
+}
+
+
+function navigationTemplate() {
+    return `<div class="dialog-navigation">
+        <button data-id="prev-button" onclick="previousPokemon()" aria-label="Previous Pokémon">←</button>
+        <button data-id="next-button" onclick="nextPokemon()" aria-label="Next Pokémon">→</button>
+    </div>`;
 }
 
 
@@ -158,17 +236,24 @@ function closeDialog() {
 }
 
 
-function previousPokemon() {
+async function previousPokemon() {
     currentPokemonIndex--;
     if (currentPokemonIndex < 0) currentPokemonIndex = allPokemon.length - 1;
-    renderDialog();
+    await showCurrentPokemon();
 }
 
 
-function nextPokemon() {
+async function nextPokemon() {
     currentPokemonIndex++;
     if (currentPokemonIndex >= allPokemon.length) currentPokemonIndex = 0;
-    renderDialog();
+    await showCurrentPokemon();
+}
+
+
+async function showCurrentPokemon() {
+    renderDialog("Loading extra details...");
+    let species = await loadSpeciesLazy(allPokemon[currentPokemonIndex]);
+    renderDialog(getSpeciesText(species));
 }
 
 
@@ -181,7 +266,7 @@ function loadMore() {
 function showLoading(isLoading) {
     let loading = document.getElementById("loading");
     let button = document.querySelector(".load-more-button");
-    loading.style.display = isLoading ? "block" : "none";
+    loading.style.display = isLoading ? "flex" : "none";
     button.disabled = isLoading;
 }
 
@@ -193,13 +278,6 @@ function capitalize(text) {
 
 document.getElementById("pokemon-dialog").addEventListener("click", function(event) {
     if (event.target === this) closeDialog();
-});
-
-
-document.addEventListener("keydown", function(event) {
-    if (event.key === "Escape" && document.getElementById("pokemon-dialog").open) {
-        closeDialog();
-    }
 });
 
 
